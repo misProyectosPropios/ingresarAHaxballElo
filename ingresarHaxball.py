@@ -2,9 +2,8 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.keys import Keys
-
-
-import validators
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 import time
 
@@ -66,17 +65,18 @@ class Haxball:
                 target_element = element
                 break
         
-            
-        
         if target_element:
             actions = ActionChains(self.__driver)
             actions.double_click(target_element).perform()
-            h1 = self.__driver.find_element(By.CSS_SELECTOR, 'h1')
-            if (h1.get_attribute("innerHTML") == "Disconnected"):
-                print("Disconnected from the room")
-                print("Try again later")
+            
+            # Tengo que hacer que el programa deje el h1 que diga connecting:
+            WebDriverWait(self.__driver, 20).until(
+        EC.invisibility_of_element((By.XPATH, "//h1[text()='connecting']"))
+    )
+            try:
+                h1 = self.__driver.find_element(By.CSS_SELECTOR, 'h1')
                 return EntradaSala.FAIL
-            else:
+            except (NoSuchElementException):
                 print("Connected to the room")
                 return EntradaSala.SUCCESS
         else:
@@ -84,7 +84,10 @@ class Haxball:
             return EntradaSala.NO_ELEMENT
 
     def goToIframe(self):
-        iframe = self.__driver.find_element(By.CSS_SELECTOR, "iframe")
+        iframe = WebDriverWait(self.__driver, 10).until(
+    EC.presence_of_element_located((By.CSS_SELECTOR, "iframe"))
+)       
+       # iframe = self.__driver.find_element(By.CSS_SELECTOR, "iframe")
         self.__driver.switch_to.frame(iframe)
 
     def logToRoom(self):
@@ -99,14 +102,20 @@ class Haxball:
 
     def iterateUntilConnectSuccess(self):
         value = self.irALink()
+        print(f"Value: {value}")
         while (value == EntradaSala.FAIL):
-            time.sleep(15)
+            time.sleep(3)
             print("Trying to connect again")
             value = self.irALink()
+            print(f"Value: {value}")
         
         if (value == EntradaSala.NO_ELEMENT):
             print("Try again later")
         else:
+            print("Waiting to load the game view")
+            WebDriverWait(self.__driver, 10).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, ".game-view"))
+            )
             print("Setting the extrapolation")
             self.setExtrapolation()
             print("Loggin to the room")
