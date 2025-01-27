@@ -1,6 +1,7 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
+
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -45,6 +46,7 @@ class Haxball:
     def ponerNombre(self):
         self.goToIframe()
         textField = self.__driver.find_element(By.CSS_SELECTOR, "input")
+        textField.clear()
         textField.send_keys(self.__nombre)
         textField = self.__driver.find_element(By.CSS_SELECTOR, "button")
         return self.ponerVariablesDeLocalStorage()
@@ -64,19 +66,29 @@ class Haxball:
             if self.__sala in element.get_attribute("innerHTML"):
                 target_element = element
                 break
+            #time.sleep(0.5)
         
         if target_element:
+            print("Element found")
             actions = ActionChains(self.__driver)
+            
+            print("Move the scroll to the element")
+            target_element.location_once_scrolled_into_view
+            print("Double clicking the element")
             actions.double_click(target_element).perform()
             
+            time.sleep(1.6)
             # Tengo que hacer que el programa deje el h1 que diga connecting:
             WebDriverWait(self.__driver, 20).until(
-        EC.invisibility_of_element((By.XPATH, "//h1[text()='connecting']"))
+        EC.invisibility_of_element((By.XPATH, "//h1[text()='Connecting']"))
     )
+            print("Termino el connecting")
             try:
                 h1 = self.__driver.find_element(By.CSS_SELECTOR, 'h1')
+                print("Couldn't connect to the room")
+                print(f'El texto del h1 es: {h1.get_attribute("innerHTML")}')
                 return EntradaSala.FAIL
-            except (NoSuchElementException):
+            except:
                 print("Connected to the room")
                 return EntradaSala.SUCCESS
         else:
